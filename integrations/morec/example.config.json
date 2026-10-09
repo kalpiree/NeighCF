@@ -1,0 +1,14 @@
+{
+  "epochs": 150,
+  "batch_size": 32,
+  "max_seq_len": 20,
+  "embedding_dim": 512,
+  "num_attention_heads": 2,
+  "transformer_block": 2,
+  "drop_rate": 0.1,
+  "learning_rate": 0.0001,
+  "encoder_learning_rate": 5e-05,
+  "weight_decay": 0.01,
+  "freeze_parameters_before": 0,
+  "num_words_title": 30
+}

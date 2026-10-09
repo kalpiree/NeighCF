@@ -23,7 +23,13 @@
     "LLaRA": "sources/LLaRA",
     "LLM-SRec": "sources/LLM-SRec",
     "FCRLLM": "sources/FCRLLM",
-    "UCGRec": "sources/UCGRec/UCGRec_topk_ver"
+    "UCGRec": "sources/UCGRec/UCGRec_topk_ver",
+    "LightGCN-PyTorch": "sources/LightGCN-PyTorch",
+    "TALLRec": "sources/TALLRec",
+    "MoRec": "sources/MoRec",
+    "LLM-CF": "sources/LLM-CF",
+    "RecICL": "sources/RecICL",
+    "DRDT": "sources/DRDT"
   },
   "datasets": {
     "movielens": {
@@ -50,7 +56,14 @@
       "rq3_threshold": {
         "value": null,
         "validation_receipt": "validation/movielens/threshold-selection.json"
-      }
+      },
+      "item_kind": "movie",
+      "tallrec_domain": "movie",
+      "drdt_domain": "ml-1m",
+      "llmcf_assets": "features/movielens/llmcf-authentic",
+      "coral_ratings": "ratings/movielens/train.jsonl",
+      "coral_embeddings": "features/movielens/coral/embeddings.json",
+      "coral_embedding_provenance": "features/movielens/coral/provenance.json"
     },
     "goodreads": {
       "canonical": "data/goodreads",
@@ -76,7 +89,14 @@
       "rq3_threshold": {
         "value": null,
         "validation_receipt": "validation/goodreads/threshold-selection.json"
-      }
+      },
+      "item_kind": "book",
+      "tallrec_domain": "book",
+      "drdt_domain": "Books",
+      "llmcf_assets": "features/goodreads/llmcf-authentic",
+      "coral_ratings": "ratings/goodreads/train.jsonl",
+      "coral_embeddings": "features/goodreads/coral/embeddings.json",
+      "coral_embedding_provenance": "features/goodreads/coral/provenance.json"
     },
     "steam": {
       "canonical": "data/steam",
@@ -100,7 +120,14 @@
       "rq3_threshold": {
         "value": null,
         "validation_receipt": "validation/steam/threshold-selection.json"
-      }
+      },
+      "item_kind": "game",
+      "tallrec_domain": "item",
+      "drdt_domain": "Games",
+      "llmcf_assets": "features/steam/llmcf-authentic",
+      "coral_ratings": "ratings/steam/train.jsonl",
+      "coral_embeddings": "features/steam/coral/embeddings.json",
+      "coral_embedding_provenance": "features/steam/coral/provenance.json"
     },
     "lastfm": {
       "canonical": "data/lastfm",
@@ -126,7 +153,62 @@
       "rq3_threshold": {
         "value": null,
         "validation_receipt": "validation/lastfm/threshold-selection.json"
-      }
+      },
+      "item_kind": "artist",
+      "tallrec_domain": "artist",
+      "drdt_domain": "artists-native-books-adaptation-v1",
+      "llmcf_assets": "features/lastfm/llmcf-authentic",
+      "coral_ratings": "ratings/lastfm/train.jsonl",
+      "coral_embeddings": "features/lastfm/coral/embeddings.json",
+      "coral_embedding_provenance": "features/lastfm/coral/provenance.json"
+    }
+  },
+  "baselines": {
+    "lightgcn": {
+      "epochs": null
+    },
+    "llama2": {
+      "model_path": "models/EDIT_ME_Llama-2-7b-hf"
+    },
+    "gpt4": {
+      "model_id": null,
+      "execute_api": false,
+      "max_requests": null
+    },
+    "tallrec": {
+      "python": "environments/tallrec/bin/python",
+      "model_path": "models/EDIT_ME_Llama-7b",
+      "instruction_adapter": "models/EDIT_ME_tallrec-instruction-lora"
+    },
+    "morec": {
+      "encoder_path": "models/EDIT_ME_bert-base-uncased",
+      "config": "integrations/morec/example.config.json"
+    },
+    "coral": {
+      "model_path": "models/EDIT_ME_coral-backbone",
+      "config": "integrations/coral/example.config.json",
+      "max_backend_calls": null
+    },
+    "llmcf": {
+      "learning_rate": null,
+      "weight_decay": null,
+      "optimizer": null,
+      "schedule": null,
+      "num_neg": null
+    },
+    "drdt": {
+      "backend": "local",
+      "model_path": "models/EDIT_ME_drdt-backbone",
+      "allow_api": false,
+      "api_model": null,
+      "max_api_calls": null
+    },
+    "recicl": {
+      "model_path": "models/EDIT_ME_recicl-backbone",
+      "learning_rate": null,
+      "weight_decay": null,
+      "optimizer": null,
+      "schedule": null
     }
   }
 }

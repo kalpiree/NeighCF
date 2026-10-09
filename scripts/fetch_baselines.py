@@ -105,7 +105,7 @@ def fetch(entry, parent):
 
 def parser():
     root = Path(__file__).resolve().parents[1]
-    result = argparse.ArgumentParser(description="Inspect, verify or explicitly fetch the pinned baseline sources without model weights or datasets.")
+    result = argparse.ArgumentParser(description="Inspect, verify or explicitly fetch pinned upstream checkouts, including any tracked upstream assets.")
     result.add_argument("--manifest", type=Path, default=root / "third_party/UPSTREAM.json")
     result.add_argument("--directory", type=Path, default=root / "third_party")
     result.add_argument("--only", nargs="+", default=[])

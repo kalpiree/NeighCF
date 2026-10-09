@@ -1,0 +1,9 @@
+torch==2.4.1
+numpy==1.26.4
+transformers==4.28.0
+peft==0.3.0
+bitsandbytes==0.37.2
+accelerate
+datasets
+scikit-learn==1.5.2
+sentencepiece==0.2.0

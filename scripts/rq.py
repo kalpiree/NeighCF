@@ -3,13 +3,15 @@ import copy
 import hashlib
 import json
 import math
+import os
 from pathlib import Path
 import re
 import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-MODELS = ('neighcf', 'llara', 'llmsrec', 'fcrllm', 'ucgrec', 'gru4rec', 'caser', 'sasrec')
+ADDED_MODELS = ('lightgcn', 'llama2', 'gpt4', 'tallrec', 'morec', 'coral', 'llmcf', 'drdt', 'recicl')
+MODELS = ('neighcf', 'llara', 'llmsrec', 'fcrllm', 'ucgrec', 'gru4rec', 'caser', 'sasrec') + ADDED_MODELS
 SEEDS = (42, 43, 44, 45, 46)
 M_VALUES = (4, 8, 12, 16, 20)
 K_VALUES = (2, 4, 6, 8, 10)
@@ -153,6 +155,121 @@ def build_plan(path, rqs=(1, 2, 3, 4), datasets=None, models=None):
                         '--model-path', asset(task, 'Llama-2 backbone', project.get('model_path'), 'directory'),
                         '--dataset-name', task['dataset_label'],
                         '--output', task['output'], '--device', project.get('device', 'cuda:0')]
+    def added_baseline(task, data, model):
+        options = project.get('baselines', {}).get(model, {})
+        device = project.get('device', 'cuda:0')
+        dataset = asset(task, 'canonical dataset', data.get('canonical'), 'canonical')
+        common = ['--data', dataset, '--output', task['output'], '--seed', str(task['seed']), '--expected-candidates', '51']
+        def required(name, predicate):
+            value = options.get(name)
+            if not predicate(value):
+                task['blocking'].append(model + '.' + name + ' must be explicitly configured')
+            return str(value)
+        def source(name):
+            return asset(task, name + ' source', project.get('sources', {}).get(name), 'directory')
+        def local_model():
+            return asset(task, model + ' local model', options.get('model_path', project.get('model_path')), 'directory')
+        def configuration(name):
+            path = ROOT / options.get('config', 'integrations/' + name + '/example.config.json')
+            value = read(path)
+            if name == 'coral':
+                value.update(seed=task['seed'], expected_candidates=51)
+            destination = outputs / '.plans' / task['id'] / 'config.json'
+            task['generated_files'][str(destination)] = value
+            return str(destination)
+        if model == 'lightgcn':
+            epochs = options.get('epochs') if options.get('epochs') is not None else project.get('traditional_epochs')
+            if type(epochs) is not int or epochs < 1:
+                task['blocking'].append('lightgcn.epochs or traditional_epochs must be a positive integer')
+            task['argv'] = [sys.executable, '-m', 'integrations.lightgcn.run', 'train', *common,
+                            '--source', source('LightGCN-PyTorch'), '--dataset', task['dataset_label'],
+                            '--epochs', str(epochs), '--device', 'cpu' if device == 'cpu' else 'cuda']
+        elif model in ('llama2', 'gpt4'):
+            task['argv'] = [sys.executable, '-m', 'integrations.zeroshot.run', 'run', *common,
+                            '--backend', model, '--dataset-name', task['dataset_label'], '--device', device]
+            if model == 'llama2':
+                task['argv'] += ['--model-path', local_model()]
+            else:
+                model_id = required('model_id', lambda v: isinstance(v, str) and (v == 'gpt-4' or v.startswith('gpt-4-')))
+                task['argv'] += ['--model-id', model_id]
+                replay = data.get('gpt4_responses')
+                if replay:
+                    task['argv'] += ['--responses', asset(task, 'GPT-4 response replay', replay)]
+                else:
+                    if options.get('execute_api') is not True:
+                        task['blocking'].append('gpt4.execute_api must be true for paid execution, or supply gpt4_responses')
+                    budget = required('max_requests', lambda v: type(v) is int and v > 0)
+                    task['argv'] += ['--execute-api', '--max-requests', budget]
+        elif model == 'morec':
+            task['argv'] = [sys.executable, '-m', 'integrations.morec.run', 'train', *common,
+                            '--source', source('MoRec'), '--config', configuration('morec'), '--device', device,
+                            '--encoder-path', asset(task, 'MoRec local BERT encoder', options.get('encoder_path'), 'directory')]
+        elif model == 'tallrec':
+            interpreter = asset(task, 'TALLRec native environment Python', options.get('python'), 'executable')
+            if device == 'cpu':
+                task['blocking'].append('native TALLRec training requires one visible CUDA GPU')
+            domain = data.get('tallrec_domain')
+            if domain not in ('movie', 'book', 'item', 'artist'):
+                task['blocking'].append('tallrec_domain must name the explicit domain adaptation')
+            shared = ['--source', source('TALLRec'), '--data', dataset, '--dataset', task['dataset_label'],
+                      '--domain', str(domain), '--seed', str(task['seed']), '--expected-candidates', '51',
+                      '--device', 'cpu' if device == 'cpu' else 'cuda']
+            train_output = str(Path(task['output']) / 'train')
+            evaluate_output = str(Path(task['output']) / 'evaluation')
+            task['argv'] = [interpreter, '-m', 'integrations.tallrec.run', 'train', *shared,
+                            '--output', train_output, '--model-path', asset(task, 'TALLRec explicit LLaMA backbone', options.get('model_path'), 'directory'),
+                            '--instruction-adapter', asset(task, 'TALLRec instruction LoRA', options.get('instruction_adapter'), 'tallrec_instruction'),
+                            '--adaptation', 'implicit-history-positive-one-unobserved-negative-v1', '--epochs', '5', '--batch-size', '128']
+            task['steps'] = [{'argv': task['argv'], 'output': train_output, 'resume_marker': str(Path(train_output) / 'launch.json')},
+                             {'argv': [interpreter, '-m', 'integrations.tallrec.run', 'evaluate', *shared,
+                                       '--run', train_output, '--output', evaluate_output],
+                              'output': evaluate_output, 'resume_marker': str(Path(evaluate_output) / '.restart' / 'latest.json')}]
+        elif model in ('llmcf', 'recicl'):
+            task['argv'] = [sys.executable, '-m', 'integrations.' + model + '.run', 'train', *common,
+                            '--source', source('LLM-CF' if model == 'llmcf' else 'RecICL'),
+                            '--epochs', '5', '--batch-size', '128', '--device', device,
+                            '--learning-rate', required('learning_rate', lambda v: type(v) in (int, float) and math.isfinite(v) and v > 0),
+                            '--weight-decay', required('weight_decay', lambda v: type(v) in (int, float) and math.isfinite(v) and v >= 0),
+                            '--training-candidates', '100',
+                            '--optimizer', required('optimizer', lambda v: v in ('adam', 'adamw')),
+                            '--schedule', required('schedule', lambda v: v in ('constant', 'warmup_cosine'))]
+            if model == 'llmcf':
+                task['argv'] += ['--assets', asset(task, 'LLM-CF authentic augmentation bundle', data.get('llmcf_assets'), 'llmcf_assets', split_metadata=str(Path(dataset) / 'splits.json')),
+                                 '--num-neg', required('num_neg', lambda v: type(v) is int and v > 0)]
+                if options.get('config'):
+                    task['argv'] += ['--config', asset(task, 'LLM-CF architecture configuration', options['config'])]
+            else:
+                item_kind = data.get('item_kind')
+                if item_kind not in ('movie', 'book', 'game', 'artist'):
+                    task['blocking'].append('RecICL requires item_kind')
+                task['argv'] += ['--model-path', local_model(), '--item-kind', str(item_kind), '--demonstrations', '4', '--history-length', '10',
+                                 '--dtype', options.get('dtype', 'float32'), '--max-txt-len', str(options.get('max_txt_len', 3072))]
+                if options.get('dtype', 'float32') not in ('float32', 'float16', 'bfloat16') or type(options.get('max_txt_len', 3072)) is not int or options.get('max_txt_len', 3072) < 1:
+                    task['blocking'].append('RecICL requires a supported dtype and positive max_txt_len')
+        elif model == 'drdt':
+            domain = data.get('drdt_domain')
+            if domain not in ('ml-1m', 'Games', 'Books', 'artists-native-books-adaptation-v1'):
+                task['blocking'].append('DRDT requires a supported explicit drdt_domain')
+            task['argv'] = [sys.executable, '-m', 'integrations.drdt.run', 'score', *common,
+                            '--source', source('DRDT'), '--domain', str(domain), '--device', device]
+            backend = options.get('backend', 'local')
+            if backend == 'local':
+                task['argv'] += ['--backend', 'local', '--model-path', local_model()]
+            elif backend == 'api':
+                if options.get('allow_api') is not True:
+                    task['blocking'].append('drdt.allow_api must be true for paid execution')
+                task['argv'] += ['--backend', 'api', '--allow-api', '--api-model', required('api_model', lambda v: isinstance(v, str) and bool(v)),
+                                 '--max-api-calls', required('max_api_calls', lambda v: type(v) is int and v > 0)]
+            else:
+                task['blocking'].append('drdt.backend must be local or api')
+        elif model == 'coral':
+            task['argv'] = [sys.executable, '-m', 'integrations.coral.run', 'train', '--data', dataset,
+                            '--output', task['output'], '--config', configuration('coral'), '--device', device,
+                            '--model-path', local_model(),
+                            '--ratings', asset(task, 'CoRAL observed timestamped ratings', data.get('coral_ratings')),
+                            '--embeddings', asset(task, 'CoRAL train-only user/item embeddings', data.get('coral_embeddings')),
+                            '--embedding-provenance', asset(task, 'CoRAL embedding provenance', data.get('coral_embedding_provenance')),
+                            '--max-backend-calls', required('max_backend_calls', lambda v: type(v) is int and v > 0)]
     for dataset in chosen:
         data = project['datasets'][dataset]
         for seed in SEEDS:
@@ -163,6 +280,9 @@ def build_plan(path, rqs=(1, 2, 3, 4), datasets=None, models=None):
                     task = new_task(f'rq1/{dataset}/{model}/seed-{seed}', 1, dataset, model, seed)
                     if model == 'neighcf':
                         nc_train(task, data)
+                        continue
+                    if model in ADDED_MODELS:
+                        added_baseline(task, data, model)
                         continue
                     source_key = 'BSARec' if model in ('gru4rec', 'caser', 'sasrec') else {
                         'llara': 'LLaRA', 'llmsrec': 'LLM-SRec', 'fcrllm': 'FCRLLM', 'ucgrec': 'LLM-SRec'}[model]
@@ -269,10 +389,25 @@ def validate_requirement(req):
         raise ValueError(req['name'] + ' is not configured')
     path = Path(path)
     kind = req['kind']
-    if kind in ('directory', 'canonical'):
+    if kind in ('directory', 'canonical', 'llmcf_assets', 'tallrec_instruction'):
         if not path.is_dir():
             raise ValueError('missing directory: ' + str(path))
-        if kind == 'canonical':
+        if kind == 'tallrec_instruction':
+            config = read(path / 'adapter_config.json')
+            if (config.get('r'), config.get('lora_alpha'), config.get('lora_dropout')) != (8, 16, 0.05) or set(config.get('target_modules', [])) != {'q_proj', 'v_proj'} or config.get('bias') != 'none' or config.get('task_type') != 'CAUSAL_LM' or not (path / 'adapter_model.bin').is_file():
+                raise ValueError('TALLRec requires the actual native instruction LoRA config and weights')
+        elif kind == 'llmcf_assets':
+            manifest = read(path / 'manifest.json')
+            if manifest.get('schema') != 'llmcf-authentic-augmentation-v1' or manifest.get('protocol_sha256') != read(req['split_metadata']).get('protocol_sha256'):
+                raise ValueError('LLM-CF authentic augmentation schema or protocol mismatch')
+            for name in ('generator_model', 'generator_revision', 'embedding_model', 'embedding_revision', 'generation_description', 'source_commit'):
+                if not isinstance(manifest.get(name), str) or not manifest[name].strip():
+                    raise ValueError('LLM-CF authentic augmentation provenance is required')
+            for name in ('bank.jsonl', 'cot_embeddings.npy', 'item_embeddings.npy'):
+                artifact = path / name
+                if artifact.is_symlink() or not artifact.is_file() or sha(artifact) != manifest.get('sha256', {}).get(name):
+                    raise ValueError('LLM-CF authentic augmentation file hash differs: ' + name)
+        elif kind == 'canonical':
             for name in ('items.json', 'manifest.json', 'splits.json', 'train.jsonl', 'valid.jsonl', 'test.jsonl'):
                 if not (path / name).is_file():
                     raise ValueError('missing canonical file: ' + str(path / name))
@@ -286,6 +421,8 @@ def validate_requirement(req):
         return
     if not path.is_file():
         raise ValueError('missing file: ' + str(path))
+    if kind == 'executable' and not os.access(path, os.X_OK):
+        raise ValueError('TALLRec environment Python must be executable')
     if kind == 'centres':
         centres = read(path)
         if (not isinstance(centres, list) or len(centres) != req['rows'] or not centres
@@ -326,7 +463,8 @@ def validate_requirement(req):
 
 def validate_destinations(task):
     root = Path(task['output_root']).absolute()
-    for raw in (task['output'], *task['generated_files']):
+    for raw in (task['output'], *task['generated_files'], *(step['output'] for step in task.get('steps', [])),
+                *(step['resume_marker'] for step in task.get('steps', []) if step.get('resume_marker'))):
         path = Path(raw).absolute()
         if not path.is_relative_to(root):
             raise ValueError('planned output escapes the project output root')
@@ -351,15 +489,19 @@ def execute_task(task, resume=False):
             destination.parent.mkdir(parents=True, exist_ok=True)
             with destination.open('x') as stream:
                 stream.write(content)
-    argv = list(task['argv'])
-    if resume:
-        if task['rq'] == 4 or '/activity/' in task['id']:
-            raise ValueError('resume applies only to training tasks')
-        argv.append('--resume')
+    if resume and (task['rq'] == 4 or '/activity/' in task['id']):
+        raise ValueError('resume applies only to training and scoring tasks')
     output = Path(task['output'])
     output.parent.mkdir(parents=True, exist_ok=True)
-    result = subprocess.run(argv, cwd=ROOT, check=False)
-    return result.returncode
+    for step in task.get('steps', [{'argv': task['argv'], 'output': task['output']} ]):
+        argv = list(step['argv'])
+        marker = step.get('resume_marker')
+        if resume and (marker is None or Path(marker).exists()):
+            argv.append('--resume')
+        result = subprocess.run(argv, cwd=ROOT, check=False)
+        if result.returncode:
+            return result.returncode
+    return 0
 
 
 def preflight_selection(tasks, resume=False):

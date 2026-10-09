@@ -24,3 +24,9 @@ third_party/LLM-SRec/
 third_party/FCRLLM/
 third_party/UCGRec/
 third_party/BSARec/
+third_party/LightGCN-PyTorch/
+third_party/TALLRec/
+third_party/MoRec/
+third_party/LLM-CF/
+third_party/RecICL/
+third_party/DRDT/

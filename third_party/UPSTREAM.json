@@ -101,6 +101,108 @@
         "src/model/sasrec.py": "65fef2068014192ef9e04efada4797b91852c52fc5ea0c1fa03b7feed19b1cee"
       },
       "integration_source_argument": "third_party/BSARec"
+    },
+    {
+      "name": "LightGCN-PyTorch",
+      "url": "https://github.com/gusye1234/LightGCN-PyTorch.git",
+      "commit": "947ca2b3b1d2d3545b114145710cb06c4e57b3d2",
+      "destination": "LightGCN-PyTorch",
+      "licenses": [],
+      "license_status": "no_license_file_in_pinned_checkout",
+      "required_files": {
+        "code/model.py": "987351a5071065cddc4acda8fdaeda127a5e180a8716cf63132bf76c34dde32e",
+        "code/utils.py": "829e31d7ad3d5d0654524d7b8d23cea11950d5e4cde5517f8ef9c91d149101a8",
+        "code/dataloader.py": "093419d07f7a475fb8c410c753b276a6fc7ac1de195f417a6d6c8d66559475e7",
+        "code/Procedure.py": "60fda65c3adee9d8ffca225c21ff8da5d80ebedc1997673c0ce95417d2035e8b"
+      },
+      "integration_source_argument": "third_party/LightGCN-PyTorch"
+    },
+    {
+      "name": "TALLRec",
+      "url": "https://github.com/SAI990323/TALLRec.git",
+      "commit": "c1db29ce6501bce32cc8c3e343c4eb14155beeb1",
+      "destination": "TALLRec",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "sha256": "df825c8e037af50d35015f3dc941f6565a7c28c3bbd8d4b85e5da4b494612024",
+          "bundled_copy": "licenses/TALLRec/LICENSE"
+        }
+      ],
+      "license_status": "license_files_preserved",
+      "required_files": {
+        "finetune_rec.py": "83dd50cd5c74549afca068e75786641ce2d692b4ddaac1c74afd5ed51f3a8138",
+        "evaluate.py": "5f6e865ae7df290a2bb8e2a60341942c094e39bcdc1ccc859bc1b0a905c35652",
+        "preprocess_movie.py": "6dc5ee303d791a1f6d91758650ba5bfa53536a8753b2bb59400db9495249655a",
+        "preprocess_book.py": "30feb03f9a7827c1bba0d7581ea29b506a42852e2d7ef4612a32c6ec767c623b",
+        "requirements.txt": "f7ad93d6f93c10b8f64484df158fadfcee506c4f9c92aa2336df400559d6fd58",
+        "LICENSE": "df825c8e037af50d35015f3dc941f6565a7c28c3bbd8d4b85e5da4b494612024",
+        "shell/instruct_7B.sh": "85f185a99deb825b50641f5e937eb4dd8faa9edda95a4afde1ec8b2bd72e00a0"
+      },
+      "integration_source_argument": "third_party/TALLRec"
+    },
+    {
+      "name": "MoRec",
+      "url": "https://github.com/westlake-repl/IDvs.MoRec.git",
+      "commit": "ce372cfc523c52458fa0267c9834d1be488e026a",
+      "destination": "MoRec",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bundled_copy": "licenses/MoRec/LICENSE"
+        }
+      ],
+      "license_status": "license_files_preserved",
+      "required_files": {
+        "bce_text/main-end2end/model/__init__.py": "a95e432efdbaa10c5534739a3378029e8ca295003f707c0aed736cbf25aa80f2",
+        "bce_text/main-end2end/model/model.py": "dbd24c3847c10174142f6a62fd12ca2a7820c16a32462f17512bf4666cfd9dad",
+        "bce_text/main-end2end/model/encoders.py": "66a9af8a45fa322cb2156b7c5533270db66c01b2341341146d6e1473505ec9f7",
+        "bce_text/main-end2end/model/modules.py": "d1488ed68bcc7a65ca80e30ef7d78592b8c84d36c7ce30be182a85cc2da49a42",
+        "bce_text/main-end2end/data_utils/dataset.py": "375e3eb16943c7ae6d3ee08ecbcc1644a3fface46f4c79ae9518a226b52929b0"
+      },
+      "integration_source_argument": "third_party/MoRec"
+    },
+    {
+      "name": "DRDT",
+      "url": "https://github.com/YuWang-1024/DRDT.git",
+      "commit": "928eee5d3571022a3da661243cc73d715625b8b8",
+      "destination": "DRDT",
+      "licenses": [],
+      "license_status": "no_license_file_in_pinned_checkout",
+      "required_files": {
+        "src/model/llm_gpt.py": "10a85b5362088094467a3bf2bc041aeb0b6679e78fc4d25a825a9b75dbff449d"
+      },
+      "integration_source_argument": "third_party/DRDT"
+    },
+    {
+      "name": "LLM-CF",
+      "url": "https://github.com/Jeryi-Sun/LLM-CF.git",
+      "commit": "441e2e969347112462eb28783840e88063d98694",
+      "destination": "LLM-CF",
+      "licenses": [],
+      "license_status": "no_root_license_at_pinned_commit; transformer_decoder.py states GPLv3; vendored LLaMA-Factory license has limited scope",
+      "required_files": {
+        "retrieval_task/src_code/models/base.py": "6bc16846bf2d6ace00a0203cc43a209dc21a2b35b54da164c2b2cd2b3a8e3913",
+        "retrieval_task/src_code/models/SASREC.py": "897ab0cdbf7d2a84cd1dded8633e9cb85a5aabb1c01e7420511a3381d7fe9484",
+        "retrieval_task/src_code/models/DeepFM.py": "1ec35ec6a8941c6bc9a60dea73f1b3413b6c18d796e531071fdb8cc845fbc6a2",
+        "retrieval_task/src_code/models/transformer_decoder.py": "53dd241f1f31f8bb4cc07877b05b3aae12c858b9dffa8e902ca8c3c2ee521a80",
+        "retrieval_task/src_code/config/beauty/SASREC_aug.yaml": "dc00b234c7a89e06154c80ba834282726c127910d61e3199862a3116b8c37fdb",
+        "LLaMA-Factory/generate/retrieval_ICL_retrieval.py": "bc91d0070532aef1b883d7a9398a7383a3682c6a17ecd1613d86baaf65752159"
+      },
+      "integration_source_argument": "third_party/LLM-CF"
+    },
+    {
+      "name": "RecICL",
+      "url": "https://github.com/ym689/rec_icl.git",
+      "commit": "67706a6dc49c9ca01072d0379e300c9227034330",
+      "destination": "RecICL",
+      "licenses": [],
+      "license_status": "no_root_license_at_pinned_commit",
+      "required_files": {
+        "minigpt4/models/minigpt4rec_v2.py": "bbf35f23e99d36fd1174a2ba16d4b200246f44ddf8c9d419cb2cc49f076c71a2"
+      },
+      "integration_source_argument": "third_party/RecICL"
     }
   ]
 }

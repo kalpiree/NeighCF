@@ -1,23 +1,31 @@
 # NeighCF
 
-Implementation of **NeighCF: Neighborhood-aware Collaborative Filtering for LLM-based Sequential Recommendation**, seven comparison methods, and RQ1–RQ4. NeighCF is reconstructed from the manuscript; its implementation choices are specified below.
+Implementation of **NeighCF: Neighborhood-aware Collaborative Filtering for LLM-based Sequential Recommendation**, sixteen comparison methods, and RQ1–RQ4. NeighCF is reconstructed from the manuscript; its implementation choices are specified below.
 
 ## Methods
 
 | Method | Implementation |
 | --- | --- |
 | NeighCF | Causal neighbor retrieval, prompts, candidate-likelihood scoring and training |
+| LightGCN | Native graph propagation, BPR objective and train-only graph |
+| LLaMA2-zero-shot, GPT-4-zero-shot | Explicit generated-ranking prompt, frozen candidates and response journals |
+| TALLRec | Native recommendation tuning, binary AUC selection and canonical candidate ranking |
+| MoRec | SIGIR 2023 text-modality BERT/SASRec end-to-end BCE variant |
+| CoRAL | DDPG reconstruction with observed ratings and a local frozen LLM |
+| LLM-CF | Native SASREC_aug with supplied CoT and item-text features |
+| DRDT | Native sequential and collaborative reflection methods |
+| RecICL | Native no-CF prediction methods with recent same-user examples |
 | GRU4Rec, Caser, SASRec | Pinned BSARec implementations with validation selection and checkpoint resume |
 | LLaRA | Native architecture with canonical data and candidate evaluation adapters |
 | LLM-SRec | Native architecture with a Llama-2 backbone substitution |
 | FCRLLM | Native architecture with Llama-2 title features |
 | UCGRec | Native top-k implementation with temporal graphs and domain-specific semantic features |
 
-Only these methods are included. Native source revisions and file hashes are recorded in `third_party/UPSTREAM.json`.
+The twelve manuscript baselines use modality-based MoRec from SIGIR 2023. LLaRA, LLM-SRec, FCRLLM and UCGRec are additional comparisons. Native source revisions and file hashes are recorded in `third_party/UPSTREAM.json`.
 
 ## Setup
 
-Use Python 3.11. Run commands from the repository root.
+Use Python 3.11. Run commands from the repository root. TALLRec uses the separate environment described below.
 
 ```sh
 python3.11 -m venv .venv
@@ -41,7 +49,7 @@ python scripts/fetch_baselines.py --directory "$NEIGHCF_WORKSPACE/sources" --fet
 python scripts/fetch_baselines.py --directory "$NEIGHCF_WORKSPACE/sources" --verify
 ```
 
-Without `--fetch` or `--verify`, the fetcher prints a plan. Supply model weights as local Hugging Face snapshot directories.
+Without `--fetch` or `--verify`, the fetcher prints a plan. Fetching includes any assets tracked in the upstream repositories; keep those checkouts external. Supply backbone weights as local Hugging Face snapshot directories.
 
 Edit `project.json` and set `workspace` to `"."`. Asset paths and `output_root` resolve against that workspace. `neighcf_config` and `training_config` resolve against the code root. Teacher paths support `{seed}` and `{dataset}`. Set the local model path, dataset paths, feature paths and training budgets before running.
 
@@ -159,6 +167,66 @@ python -m integrations.traditional.run train --model sasrec --source BSAREC_SOUR
 
 Choose `gru4rec`, `caser` or `sasrec`. Set the epoch budget explicitly. Defaults include sequence length 50 and validation NDCG@10 selection. Record the training budget, sequence length and regularization choice with each experiment.
 
+### LightGCN and modality MoRec
+
+```sh
+python -m integrations.lightgcn.run train --source LIGHTGCN_SOURCE --data CANONICAL_DATA --dataset DATASET_LABEL --output NEW_RUN --epochs CHOSEN_EPOCHS --seed 42 --device cuda
+python -m integrations.morec.run train --source MOREC_SOURCE --data CANONICAL_DATA --encoder-path LOCAL_BERT --config integrations/morec/example.config.json --output NEW_RUN --seed 42 --device cuda:0
+```
+
+LightGCN deduplicates canonical training histories and targets into graph edges. Its native BPR sampler excludes known training items. Every evaluation user needs training edges. Default dimension is 64 with three graph layers; choose the epoch budget explicitly.
+
+MoRec loads the original `bce_text/main-end2end` model from [IDvs.MoRec](https://github.com/westlake-repl/IDvs.MoRec). Titles supply the text modality. It uses each user's latest training prefix, shifted sequence BCE and unseen negatives; validation NDCG@10 selects the epoch. Its example configuration records sequence length 20, BERT title width 30 and a 150-epoch budget. Both commands automatically evaluate the selected model on the fixed test candidates.
+
+### Zero-shot inference and DRDT
+
+```sh
+python -m integrations.zeroshot.run plan --backend llama2 --data CANONICAL_DATA
+python -m integrations.zeroshot.run run --backend llama2 --data CANONICAL_DATA --model-path LOCAL_LLAMA2 --device cuda:0 --output NEW_RUN
+python -m integrations.zeroshot.run export --backend gpt4 --model-id GPT4_SNAPSHOT --data CANONICAL_DATA --output NEW_REQUEST_DIRECTORY
+python -m integrations.drdt.run audit --source DRDT_SOURCE --data CANONICAL_DATA --domain Books
+python -m integrations.drdt.run score --source DRDT_SOURCE --data CANONICAL_DATA --domain Books --backend local --model-path LOCAL_MODEL --device cuda:0 --output NEW_RUN
+```
+
+Zero-shot prompts contain chronological titles and numbered candidates. A normally completed JSON permutation supplies ordinal scores. This prompt is an explicit candidate-ranking adaptation; no target labels enter it. Local LLaMA2 requires the 7B architecture. GPT-4 execution requires an explicit `gpt-4` or `gpt-4-*` model ID, `OPENAI_API_KEY`, `--execute-api` and a positive `--max-requests` limit. Prefer a fixed snapshot for repeatability. Offline `--responses FILE` rows contain `query_id`, the exported `request_sha256`, and `response` with `text`, `model` and `finish_reason`. Keep that file outside the output directory. Greedy local runs across seeds need not yield different predictions.
+
+DRDT preserves the pinned sequential-reflection and collaborative-reflection calls. It requires an earlier other-user training demonstration with the same history endpoint and enough history for the selected reflection depth. Supported domains include `ml-1m`, `Games`, `Books` and the explicit LastFM wording adaptation `artists-native-books-adaptation-v1`. Local inference is a backbone substitution. API use requires `--backend api --allow-api --api-model PINNED_MODEL --max-api-calls BUDGET`. Both integrations journal completed calls. Resume keeps confirmed responses; an interrupted request with uncertain completion requires `--retry-uncertain` before another API attempt.
+
+### TALLRec
+
+Create a separate CUDA environment with `requirements-tallrec.txt`. Its native pins are Transformers 4.28.0, PEFT 0.3.0 and bitsandbytes 0.37.2; resolved runtime versions are recorded at launch and checked on resume. Set `CUDA_VISIBLE_DEVICES` to one allocated GPU. Supply local LLaMA-compatible weights and the original instruction-tuned rank-8 LoRA adapter.
+
+```sh
+python -m integrations.tallrec.run train --source TALLREC_SOURCE --data CANONICAL_DATA --dataset DATASET_LABEL --domain movie --adaptation implicit-history-positive-one-unobserved-negative-v1 --model-path LOCAL_LLAMA --instruction-adapter LOCAL_INSTRUCTION_LORA --output NEW_TRAIN_RUN --epochs 5 --batch-size 128 --device cuda
+python -m integrations.tallrec.run evaluate --source TALLREC_SOURCE --data CANONICAL_DATA --dataset DATASET_LABEL --domain movie --run TRAIN_RUN --output NEW_EVALUATION_RUN --device cuda
+```
+
+The explicit implicit-feedback adaptation treats observed history as positive and adds one frozen unobserved negative per training query. Domains are `movie`, `book`, `item` or `artist`. Native binary AUC selects the checkpoint. Evaluation preserves the source's full-vocabulary softmax followed by Yes/No softmax. PEFT loading and validation-cadence compatibility fixes preserve native training. `prepare` exports and validates inputs without training. Full resume requires Trainer optimizer, scheduler, scaler, RNG and adapter files; adapter weights alone are insufficient.
+
+### LLM-CF and RecICL
+
+Both use `audit` or `train`, five epochs by default, and explicit `--learning-rate`, `--weight-decay`, `--optimizer adam|adamw` and `--schedule constant|warmup_cosine`.
+
+```sh
+python -m integrations.llmcf.run --help
+python -m integrations.recicl.run --help
+```
+
+LLM-CF requires `--source`, `--data`, `--assets` and `--num-neg`. It loads the pinned `SASREC_aug` architecture, native sampled-softmax loss and CoT reconstruction term. Assets comprise `bank.jsonl`, `cot_embeddings.npy`, `item_embeddings.npy` and `manifest.json`. The manifest uses schema `llmcf-authentic-augmentation-v1`, the pinned `source_commit`, canonical `protocol_sha256`, ordered `item_ids`, file `sha256` mappings and nonempty `generator_model`, `generator_revision`, `embedding_model`, `embedding_revision`, `generation_description`. Each bank row has a unique `example_id`, `source_query_id`, `candidate_id`, binary `label`, `cot_index` and actual `cot_text`. Item and CoT embeddings have 768 dimensions. Generate these with the upstream preparation workflow; the adapter validates and consumes them. Retrieval selects two positive and two negative training examples, excludes the current query and equal/future examples of the same user, then applies seeded ordering.
+
+RecICL requires `--source`, `--data`, `--model-path` and `--item-kind movie|book|game|artist`. It uses the exact native no-CF forward/scoring methods, raw-Yes-logit BCE and frozen input embeddings. The canonical adaptation uses up to four recent same-user positive demonstrations, ten-item histories, one frozen negative per training query and static candidate ranking. The domain prompt, full-model tuning and validation NDCG@10 selection are explicit adaptations. The optional HashGNN variant and original streaming evaluation are separate upstream workflows. Both adapters require `--output` for training and automatically score the selected model on test.
+
+### CoRAL
+
+```sh
+python -m integrations.coral.run audit --config integrations/coral/example.config.json --data CANONICAL_DATA --ratings RATINGS_JSONL --embeddings EMBEDDINGS_JSON --embedding-provenance PROVENANCE_JSON
+python -m integrations.coral.run train --config CONFIG --data CANONICAL_DATA --ratings RATINGS_JSONL --embeddings EMBEDDINGS_JSON --embedding-provenance PROVENANCE_JSON --model-path LOCAL_MODEL --output NEW_RUN --device cuda:0 --max-backend-calls BUDGET
+```
+
+The [CoRAL reconstruction](https://arxiv.org/abs/2403.06447) uses DDPG actor/critic retrieval, Euclidean user/item selection, replay, target networks, OU exploration and changes in absolute prediction error as rewards. It allows ten training retrieval steps with error-based stopping and uses five evaluation steps. Configuration specifies all numerical choices. The transition MLP learns through critic TD gradients over recomputed histories, with a separate target transition; this is an explicit reconstruction choice.
+
+Ratings require `user_id`, `item_id`, finite `rating`, millisecond `timestamp` and `split: "train"`, matching the pinned canonical training interactions. Both observed preference classes must exist. Missing interactions never supply dislikes. Embeddings are `{ "users": {ID: VECTOR}, "items": {ID: VECTOR} }`. Provenance binds `fit_split: "train"`, `protocol_sha256`, `ratings_sha256`, `embeddings_sha256` and `source_method`. This variant uses supplied frozen training embeddings, a local LLM's full-vocabulary Yes probability and canonical ranking with validation selection. Model/backbone and embedding preparation choices must accompany reported results. Training includes selected-policy test evaluation.
+
 ## Research questions
 
 ```sh
@@ -167,11 +235,11 @@ python scripts/rq.py run --project "$NEIGHCF_WORKSPACE/project.json" --id rq1/st
 python scripts/rq.py run --project "$NEIGHCF_WORKSPACE/project.json" --id rq1/steam/neighcf/seed-42 --resume
 ```
 
-Planning reports commands and missing prerequisites. `run --all` executes the filtered tasks sequentially after preflight. Training uses seeds 42–46. Set `traditional_epochs` explicitly.
+Planning reports commands and missing prerequisites. `run --all` executes the filtered tasks sequentially after preflight. Training uses seeds 42–46. Set `traditional_epochs` and model-specific `baselines` options explicitly. Configure native source paths, authentic feature/rating assets and `tallrec.python`. The TALLRec task contains separate training and evaluation steps. Paid API methods remain blocked until explicitly enabled or supplied with offline responses.
 
 | RQ | Tasks |
 | --- | --- |
-| RQ1 | Comparison of the eight included models |
+| RQ1 | Comparison of NeighCF and sixteen baselines |
 | RQ2 | Full NeighCF, without collaborative information, fixed neighbors |
 | RQ3 | M = 4/8/12/16/20, K = 2/4/6/8/10, activity-group analysis |
 | RQ4 | Retrieval and prompt timing for full, global-pool and fixed-neighbor variants |
@@ -191,7 +259,7 @@ Metadata contains `model`, `dataset`, `seed` and `protocol_sha256`. Predictions 
 
 ## Resume
 
-Append `--resume` to the original training command and output path. Keep source, data, configuration, model, tokenizer, runtime and seed unchanged. Checkpoints from another source tree require separate compatibility verification.
+Append `--resume` to the original training or journaled inference command and output path. Keep source, data, configuration, model, tokenizer, runtime and seed unchanged. Checkpoints from another source tree require separate compatibility verification.
 
 Checkpoints retain model/gate parameters, Adam state, scheduler, RNG, progress and validation selection. NeighCF publishes SHA-256 receipts and retains a previous checkpoint for recovery. `latest.pt` can fall back to the verified previous copy; corrupt `best.pt` is rejected. Load only trusted checkpoints because optimizer/RNG restoration uses PyTorch pickle. Keep output directories separate from inputs and source, without symlink ancestors.
 
@@ -207,4 +275,4 @@ A cluster scheduler must separately arrange termination signals and a new alloca
 - [UCGRec](https://github.com/KimHanBeul/UCGRec): `586cbf476d432deb13d6f7e9aa93b8636c8eb60f`
 - [BSARec](https://github.com/yehjin-shin/BSARec): `c80bdc0f1a889b78fe9a27e2058389cc84caea84`
 
-Available upstream license texts are preserved in `third_party/licenses`. The pinned LLM-SRec and BSARec checkouts have no tracked license file and remain external dependencies. Model and dataset terms apply separately.
+Additional source identities and available license texts are in `third_party/UPSTREAM.json` and `third_party/licenses`. Native source remains in external checkouts; each manifest entry records its license status. Model and dataset terms apply separately. CPU fixtures verify setup, scoring and recovery behavior. Full GPU training, pretrained-model inference and paid API execution have not been qualified for the added methods.

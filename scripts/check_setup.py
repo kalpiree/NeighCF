@@ -12,8 +12,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def check(dependencies=False, gpu=False):
     errors = []
+    upstream = json.loads((ROOT / 'third_party/UPSTREAM.json').read_text())
+    excluded = {'.venv', '__pycache__', '.git'} | {entry['destination'] for entry in upstream['sources']}
     sources = [path for path in ROOT.rglob("*.py")
-               if not any(part in {".venv", "__pycache__", "LLaRA", "LLM-SRec", "FCRLLM", "UCGRec", "BSARec"} for part in path.relative_to(ROOT).parts)]
+               if not any(part in excluded for part in path.relative_to(ROOT).parts)]
     for path in sources:
         try:
             ast.parse(path.read_text(), filename=str(path))
