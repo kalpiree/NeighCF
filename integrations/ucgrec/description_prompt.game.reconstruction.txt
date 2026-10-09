@@ -1,0 +1,1 @@
+Describe this game: "{title}". Limit the description to 200 words. Return a JSON object whose sole key is "description" and whose value is the description. Provide no additional text.

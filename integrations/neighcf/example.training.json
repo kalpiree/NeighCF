@@ -1,0 +1,15 @@
+{
+  "epochs": 5,
+  "batch_size": 128,
+  "learning_rate": 0.00001,
+  "betas": [0.9, 0.999],
+  "epsilon": 0.00000001,
+  "weight_decay": 0.0,
+  "warmup_ratio": 0.1,
+  "seed": 42,
+  "backbone_mode": "full_model",
+  "train_gate": true,
+  "selection_metric": "NDCG@10",
+  "checkpoint_every_updates": 1,
+  "max_gradient_norm": null
+}

@@ -1,0 +1,106 @@
+{
+  "schema": 1,
+  "sources": [
+    {
+      "name": "LLaRA",
+      "url": "https://github.com/ljy0ustc/LLaRA.git",
+      "commit": "9733f732399e95e236f4f2e1d1139c1f0437090e",
+      "destination": "LLaRA",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "sha256": "d8210785a20a444509d4fecd176a916f19e01807efdce591e7602736a4440039",
+          "bundled_copy": "licenses/LLaRA/LICENSE"
+        }
+      ],
+      "license_status": "license_files_preserved",
+      "required_files": {
+        "model/mlp_projector.py": "b29b9e651d98f02a0fdbf0a7c3f589e5df38f7e2ff7b5b53661c9c834700292f",
+        "model/model_interface.py": "b21ee6c5bf8d2f2b575b480be750453ba13d6ffa3f735c91c2650d64d339a7c5",
+        "data/data_interface.py": "339d9c1722a490eaee6fc974f435d5867907f9b20dda8b307b1f16f939065490",
+        "recommender/A_SASRec_final_bce_llm.py": "f0dd0ae57663ff559b844c1bd366b55ec8fe848e5bef50b598b11cd026b78aca",
+        "prompt/movie.txt": "b09f7a2ca11077605aaddb295bb5acb1110f225c7ae0cc218de46f408400769b",
+        "prompt/game.txt": "a8b310edc9594265e894d4a013240ba83214d00c92e08a1bd5e051f02efebb0e",
+        "prompt/artist.txt": "0b85e0e091281f96460942e177273757a540a7f3b3743b500f53ea37e4288094"
+      },
+      "integration_source_argument": "third_party/LLaRA"
+    },
+    {
+      "name": "LLM-SRec",
+      "url": "https://github.com/Sein-Kim/LLM-SRec.git",
+      "commit": "b81019ca655fb759cee895924b8b6c7cc0f0cce9",
+      "destination": "LLM-SRec",
+      "licenses": [],
+      "license_status": "no_license_file_in_pinned_checkout",
+      "required_files": {
+        "SeqRec/sasrec/model.py": "76b1b37583607e93291b916fdd064e4a687b0cf681b82c663218a2aba50680e6",
+        "models/seqllm4rec.py": "66e74b36f8afcc0c42e4c710e76c5537aa6c56382d0a5dd1d448931774e62940",
+        "models/seqllm_model.py": "73e9404779dbc9d20b4e540fbed2e5d3715899b95f25c14db018df4b8e1e726c"
+      },
+      "integration_source_argument": "third_party/LLM-SRec"
+    },
+    {
+      "name": "FCRLLM",
+      "url": "https://github.com/Byungmoon-Heo/FCRLLM.git",
+      "commit": "8656e45aa6162241d47cb4d57b3e6d5928b01886",
+      "destination": "FCRLLM",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "sha256": "a5c44e63f25e9908d59bf58c69df899b73de69fe40e3a7f94c2c01653fde2fde",
+          "bundled_copy": "licenses/FCRLLM/LICENSE"
+        }
+      ],
+      "license_status": "license_files_preserved",
+      "required_files": {
+        "FCRLLM/models/FlipClassroom.py": "f57de3073bd775780c0a60f56593d3e19fedf5a9c7e5eec008da8006a9f8d750",
+        "FCRLLM/models/BaseModel.py": "0fedd4858393f79e6ddca3d6ea028949523b9bcb7a53cae809147869eeac9e59",
+        "FCRLLM/models/Dualview_model.py": "0c64a97b59fcf427a599b47322e8d6ce3c3980b9b031be61147ec90c9a2d5a8a",
+        "FCRLLM/models/GRU4Rec.py": "f3e1ded8f41f85edba3893a1b7c081ce811c0361092b177a89d8a1507b8edf46",
+        "FCRLLM/models/SASRec.py": "ed69283724b499bc6bcb3cae48a911c0f34bb5b6e1a6de49a287cd20d98849dc",
+        "FCRLLM/models/utils.py": "63ea01edaf06d513d245a1957d00b3d37ad1480dea8cc7b9c0e1b4733259b59f"
+      },
+      "integration_source_argument": "third_party/FCRLLM"
+    },
+    {
+      "name": "UCGRec",
+      "url": "https://github.com/KimHanBeul/UCGRec.git",
+      "commit": "586cbf476d432deb13d6f7e9aa93b8636c8eb60f",
+      "destination": "UCGRec",
+      "licenses": [
+        {
+          "path": "LICENSE",
+          "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4",
+          "bundled_copy": "licenses/UCGRec/LICENSE"
+        }
+      ],
+      "license_status": "license_files_preserved",
+      "required_files": {
+        "UCGRec_topk_ver/model/model_interface.py": "c6cfa4b66cfb7a6216000b9fd851feb0f135cd28d3bb78d951f10a34a51f2206",
+        "UCGRec_topk_ver/model/gce_gnn.py": "efcfa23ad3e8beb848987ba47ad65a975f48f45cf6c46c8eefc2b12748797c8a",
+        "UCGRec_topk_ver/model/mlp_projector.py": "b29b9e651d98f02a0fdbf0a7c3f589e5df38f7e2ff7b5b53661c9c834700292f",
+        "UCGRec_topk_ver/data/steam_data.py": "32a791b45edbb72a7fd41c99e442d8f064e311e201cd0a34f56dd6f6ba20140d",
+        "UCGRec_topk_ver/data/movielens_data.py": "218a852c5d9e51970c0503e1b7591ce581f3ed0fa51a5eb67faa0aeeb9e60c67",
+        "UCGRec_topk_ver/prompt/movie.txt": "9a3811fc758ac5830d1a59bb266c0a7576ba204be62544404500986d331df397",
+        "UCGRec_topk_ver/prompt/game.txt": "233461c67e3f3d7900befa0046e2140440c52e12f6c064a8c20a47bc59d1dc4e"
+      },
+      "integration_source_argument": "third_party/UCGRec/UCGRec_topk_ver"
+    },
+    {
+      "name": "BSARec",
+      "url": "https://github.com/yehjin-shin/BSARec.git",
+      "commit": "c80bdc0f1a889b78fe9a27e2058389cc84caea84",
+      "destination": "BSARec",
+      "licenses": [],
+      "license_status": "no_license_file_in_pinned_checkout",
+      "required_files": {
+        "src/model/_modules.py": "3cd495cb69f1cee1a4dcee6b0918e4bbf5852fd6ceff9ac796a0fece9ec1a59c",
+        "src/model/_abstract_model.py": "bf8e4fec891aa264c8c9403cb5f8af62d731f39e5426850b2f5179beb0076be6",
+        "src/model/gru4rec.py": "dfa5c2e55deaaf5e805b2436b7049e8ee92e4dfe735b3896591c501bf26162cb",
+        "src/model/caser.py": "5cfdbeb315883e60c41a3aefccfff0b5c5cf941220359d95f58cfbb7aae03add",
+        "src/model/sasrec.py": "65fef2068014192ef9e04efada4797b91852c52fc5ea0c1fa03b7feed19b1cee"
+      },
+      "integration_source_argument": "third_party/BSARec"
+    }
+  ]
+}

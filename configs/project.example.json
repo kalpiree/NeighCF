@@ -1,0 +1,132 @@
+{
+  "schema_version": 1,
+  "workspace": "../../neighcf-workspace",
+  "output_root": "runs",
+  "seeds": [
+    42,
+    43,
+    44,
+    45,
+    46
+  ],
+  "expected_candidates": 51,
+  "llm_epochs": 5,
+  "effective_batch_size": 128,
+  "traditional_epochs": null,
+  "activity_threshold": null,
+  "device": "cuda:0",
+  "model_path": "models/EDIT_ME_Llama-2-7b-hf",
+  "neighcf_config": "integrations/neighcf/example.config.json",
+  "training_config": "integrations/neighcf/example.training.json",
+  "sources": {
+    "BSARec": "sources/BSARec",
+    "LLaRA": "sources/LLaRA",
+    "LLM-SRec": "sources/LLM-SRec",
+    "FCRLLM": "sources/FCRLLM",
+    "UCGRec": "sources/UCGRec/UCGRec_topk_ver"
+  },
+  "datasets": {
+    "movielens": {
+      "canonical": "data/movielens",
+      "items": "data/movielens/items.json",
+      "embeddings": "features/movielens/neighcf-m16/embeddings.json",
+      "events": "data/movielens/train_interactions.jsonl",
+      "default_m": 16,
+      "centres_by_m": {
+        "4": "features/movielens/neighcf-m4/centres.json",
+        "8": "features/movielens/neighcf-m8/centres.json",
+        "12": "features/movielens/neighcf-m12/centres.json",
+        "16": "features/movielens/neighcf-m16/centres.json",
+        "20": "features/movielens/neighcf-m20/centres.json"
+      },
+      "llara_teacher": "teachers/movielens/seed-{seed}/teacher.pth",
+      "llmsrec_teacher": "teachers/movielens/seed-{seed}/teacher.pth",
+      "llara_prompt": "movie.txt",
+      "fcrllm_features": "features/movielens/fcrllm",
+      "ucgrec_policy": "movielens_native_v1",
+      "ucgrec_features": "features/movielens/ucgrec/features.pt",
+      "ucgrec_feature_manifest": "features/movielens/ucgrec/features.manifest.json",
+      "ucgrec_pilot": "pilots/movielens/ucgrec/completion.json",
+      "rq3_threshold": {
+        "value": null,
+        "validation_receipt": "validation/movielens/threshold-selection.json"
+      }
+    },
+    "goodreads": {
+      "canonical": "data/goodreads",
+      "items": "data/goodreads/items.json",
+      "embeddings": "features/goodreads/neighcf-m16/embeddings.json",
+      "events": "data/goodreads/train_interactions.jsonl",
+      "default_m": 16,
+      "centres_by_m": {
+        "4": "features/goodreads/neighcf-m4/centres.json",
+        "8": "features/goodreads/neighcf-m8/centres.json",
+        "12": "features/goodreads/neighcf-m12/centres.json",
+        "16": "features/goodreads/neighcf-m16/centres.json",
+        "20": "features/goodreads/neighcf-m20/centres.json"
+      },
+      "llara_teacher": "teachers/goodreads/seed-{seed}/teacher.pth",
+      "llmsrec_teacher": "teachers/goodreads/seed-{seed}/teacher.pth",
+      "llara_prompt": "book.txt",
+      "fcrllm_features": "features/goodreads/fcrllm",
+      "ucgrec_policy": "goodreads_semantic_adaptation_v1",
+      "ucgrec_features": "features/goodreads/ucgrec/features.pt",
+      "ucgrec_feature_manifest": "features/goodreads/ucgrec/features.manifest.json",
+      "ucgrec_pilot": "pilots/goodreads/ucgrec/completion.json",
+      "rq3_threshold": {
+        "value": null,
+        "validation_receipt": "validation/goodreads/threshold-selection.json"
+      }
+    },
+    "steam": {
+      "canonical": "data/steam",
+      "items": "data/steam/items.json",
+      "embeddings": "features/steam/neighcf-m16/embeddings.json",
+      "events": "data/steam/train_interactions.jsonl",
+      "default_m": 16,
+      "centres_by_m": {
+        "4": "features/steam/neighcf-m4/centres.json",
+        "8": "features/steam/neighcf-m8/centres.json",
+        "12": "features/steam/neighcf-m12/centres.json",
+        "16": "features/steam/neighcf-m16/centres.json",
+        "20": "features/steam/neighcf-m20/centres.json"
+      },
+      "llara_teacher": "teachers/steam/seed-{seed}/teacher.pth",
+      "llmsrec_teacher": "teachers/steam/seed-{seed}/teacher.pth",
+      "llara_prompt": "game.txt",
+      "fcrllm_features": "features/steam/fcrllm",
+      "ucgrec_policy": "steam_native_v1",
+      "ucgrec_pilot": "pilots/steam/ucgrec/completion.json",
+      "rq3_threshold": {
+        "value": null,
+        "validation_receipt": "validation/steam/threshold-selection.json"
+      }
+    },
+    "lastfm": {
+      "canonical": "data/lastfm",
+      "items": "data/lastfm/items.json",
+      "embeddings": "features/lastfm/neighcf-m16/embeddings.json",
+      "events": "data/lastfm/train_interactions.jsonl",
+      "default_m": 16,
+      "centres_by_m": {
+        "4": "features/lastfm/neighcf-m4/centres.json",
+        "8": "features/lastfm/neighcf-m8/centres.json",
+        "12": "features/lastfm/neighcf-m12/centres.json",
+        "16": "features/lastfm/neighcf-m16/centres.json",
+        "20": "features/lastfm/neighcf-m20/centres.json"
+      },
+      "llara_teacher": "teachers/lastfm/seed-{seed}/teacher.pth",
+      "llmsrec_teacher": "teachers/lastfm/seed-{seed}/teacher.pth",
+      "llara_prompt": "artist.txt",
+      "fcrllm_features": "features/lastfm/fcrllm",
+      "ucgrec_policy": "lastfm_artist_semantic_adaptation_v1",
+      "ucgrec_features": "features/lastfm/ucgrec/features.pt",
+      "ucgrec_feature_manifest": "features/lastfm/ucgrec/features.manifest.json",
+      "ucgrec_pilot": "pilots/lastfm/ucgrec/completion.json",
+      "rq3_threshold": {
+        "value": null,
+        "validation_receipt": "validation/lastfm/threshold-selection.json"
+      }
+    }
+  }
+}
