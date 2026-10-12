@@ -148,7 +148,3 @@ Resume with the original command/output path and `--resume`; preserve source, da
 NeighCF checkpoints retain model/gate parameters, optimizer, scheduler, RNG, progress and validation selection with SHA-256 receipts. Keep outputs separate from inputs/source. Load only trusted checkpoints; restoration uses PyTorch pickle.
 
 Selected-model test outputs are `test.metrics.json`, `test.ranks.jsonl` and `test.scores.jsonl`. Standalone scoring produces `metrics.json`, `ranks.jsonl` and `scores.jsonl`.
-
-## Attribution
-
-Upstream revisions, hashes and license status: `third_party/UPSTREAM.json`. License texts: `third_party/licenses`. Model/dataset terms apply separately. Fixture tests verify setup, scoring and recovery, not completed training or pretrained-model evaluation.
