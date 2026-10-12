@@ -33,6 +33,8 @@ def validate_metadata(metadata: Any) -> dict[str, Any]:
     checked = dict(metadata)
     for field in ('model', 'dataset'):
         checked[field] = _nonempty_string(metadata.get(field), field)
+    if 'variant' in metadata:
+        checked['variant'] = _nonempty_string(metadata['variant'], 'variant')
     seed = metadata.get('seed')
     if isinstance(seed, bool) or not isinstance(seed, int):
         raise EvaluationError('seed must be an integer')
@@ -179,9 +181,9 @@ def aggregate_results(results: Iterable[Any]) -> dict[str, Any]:
         if counts['users'] > counts['queries']:
             raise EvaluationError(f'result {index} has more users than queries')
         _validate_metrics(result.get('metrics'), f'result {index}.metrics')
-        group = (metadata['model'], metadata['dataset'], metadata['protocol_sha256'], _canonical_json(evaluation), fingerprint, counts['queries'], counts['users'])
+        group = (metadata['model'], metadata.get('variant'), metadata['dataset'], metadata['protocol_sha256'], _canonical_json(evaluation), fingerprint, counts['queries'], counts['users'])
         if reference is not None and group != reference:
-            raise EvaluationError('cannot aggregate differing models, datasets, protocol fingerprints, evaluation settings, or evaluation sets')
+            raise EvaluationError('cannot aggregate differing models, variants, datasets, protocol fingerprints, evaluation settings, or evaluation sets')
         reference = group
         if metadata['seed'] in seeds:
             raise EvaluationError(f"cannot aggregate duplicate seed {metadata['seed']}")
@@ -194,7 +196,10 @@ def aggregate_results(results: Iterable[Any]) -> dict[str, Any]:
     for name in METRIC_NAMES:
         values = [result['metrics'][name] for result in checked]
         summary[name] = {'mean': statistics.mean(values), 'sample_stddev': statistics.stdev(values) if len(values) > 1 else None}
-    return {'schema_version': SCHEMA_VERSION, 'kind': 'aggregate', 'model': first['metadata']['model'], 'dataset': first['metadata']['dataset'], 'protocol_sha256': first['metadata']['protocol_sha256'].lower(), 'evaluation': first['evaluation'], 'evaluation_set_sha256': first['evaluation_set_sha256'].lower(), 'run_count': len(checked), 'seeds': sorted(seeds), 'metrics': summary, 'significance_test': None, 'interpretation': 'Mean and sample standard deviation across seeds; no significance claim.', 'runs': [{'seed': result['metadata']['seed'], 'counts': result['counts'], 'metrics': result['metrics']} for result in sorted(checked, key=lambda result: result['metadata']['seed'])]}
+    aggregate = {'schema_version': SCHEMA_VERSION, 'kind': 'aggregate', 'model': first['metadata']['model'], 'dataset': first['metadata']['dataset'], 'protocol_sha256': first['metadata']['protocol_sha256'].lower(), 'evaluation': first['evaluation'], 'evaluation_set_sha256': first['evaluation_set_sha256'].lower(), 'run_count': len(checked), 'seeds': sorted(seeds), 'metrics': summary, 'significance_test': None, 'interpretation': 'Mean and sample standard deviation across seeds; no significance claim.', 'runs': [{'seed': result['metadata']['seed'], 'counts': result['counts'], 'metrics': result['metrics']} for result in sorted(checked, key=lambda result: result['metadata']['seed'])]}
+    if 'variant' in first['metadata']:
+        aggregate['variant'] = first['metadata']['variant']
+    return aggregate
 
 def _write_exclusive(artifacts: list[tuple[Path, str]]) -> None:
     resolved = [path.absolute() for path, _ in artifacts]

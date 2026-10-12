@@ -93,7 +93,7 @@ def build_plan(path, rqs=(1, 2, 3, 4), datasets=None, models=None):
             return tasks[identifier]
         output = outputs / identifier
         if file_output:
-            output = output.with_suffix('.json')
+            output = output.with_suffix('.jsonl' if rq == 4 else '.json')
         dataset_name = dataset
         canonical_dir = input_path(project['datasets'][dataset].get('canonical'))
         if canonical_dir and (Path(canonical_dir) / 'splits.json').is_file():
